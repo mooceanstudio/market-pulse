@@ -12,18 +12,34 @@ async function getJson(url) {
   return res.json();
 }
 
+// Fear & Greed index (alternative.me, updates daily). Optional: the
+// dashboard must not fail if this secondary source is down.
+async function fetchFearGreed() {
+  const res = await getJson("https://api.alternative.me/fng/?limit=2");
+  const [today, yesterday] = res.data;
+  return {
+    value: Number(today.value),
+    classification: today.value_classification,
+    yesterday: Number(yesterday?.value),
+  };
+}
+
 async function fetchLive() {
-  const markets = await getJson(
-    `${API_BASE}/coins/markets?vs_currency=usd&order=market_cap_desc` +
-    `&per_page=${TABLE_COINS}&page=1&sparkline=true` +
-    `&price_change_percentage=24h,7d`
-  );
-  const global = (await getJson(`${API_BASE}/global`)).data;
+  const [markets, globalRes, fearGreed] = await Promise.all([
+    getJson(
+      `${API_BASE}/coins/markets?vs_currency=usd&order=market_cap_desc` +
+      `&per_page=${TABLE_COINS}&page=1&sparkline=true` +
+      `&price_change_percentage=24h,7d`
+    ),
+    getJson(`${API_BASE}/global`),
+    fetchFearGreed().catch(() => null),
+  ]);
   return {
     source: "live",
     fetchedAt: new Date().toISOString(),
     markets,
-    global,
+    global: globalRes.data,
+    fearGreed,
   };
 }
 
@@ -34,6 +50,7 @@ async function fetchSnapshot() {
     fetchedAt: snap.fetched_at,
     markets: snap.markets,
     global: snap.global,
+    fearGreed: snap.fear_greed ?? null,
   };
 }
 

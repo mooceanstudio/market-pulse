@@ -73,8 +73,54 @@ function tile({ label, value, delta, deltaVs, spark, sparkAccent }) {
   return el;
 }
 
+// Fear & Greed index (0–100, daily). A meter, not a chart: the fill wears
+// a status color keyed to the band, and the classification text carries
+// the meaning so color is never the only channel.
+function fngTile(fng) {
+  const el = document.createElement("article");
+  el.className = "tile";
+
+  const l = document.createElement("div");
+  l.className = "tile-label";
+  l.textContent = "Fear & Greed index";
+
+  const v = document.createElement("div");
+  v.className = "tile-value";
+  v.textContent = String(fng.value);
+
+  const cls = document.createElement("div");
+  cls.className = "tile-class";
+  const diff = Number.isFinite(fng.yesterday) ? fng.value - fng.yesterday : null;
+  cls.textContent = fng.classification +
+    (diff == null ? "" : ` · ${diff >= 0 ? "+" : ""}${diff} vs yesterday`);
+
+  const statusVar =
+    fng.value <= 24 ? "--status-critical" :
+    fng.value <= 44 ? "--status-serious" :
+    fng.value <= 55 ? "--status-warning" :
+    "--status-good";
+  const color = cssVar(statusVar);
+
+  const meter = document.createElement("div");
+  meter.className = "meter";
+  meter.setAttribute("role", "meter");
+  meter.setAttribute("aria-valuemin", "0");
+  meter.setAttribute("aria-valuemax", "100");
+  meter.setAttribute("aria-valuenow", String(fng.value));
+  meter.setAttribute("aria-label", `Fear and greed: ${fng.value}, ${fng.classification}`);
+  meter.style.background = `color-mix(in srgb, ${color} 22%, var(--surface-1))`;
+  const fill = document.createElement("div");
+  fill.className = "meter-fill";
+  fill.style.width = `${fng.value}%`;
+  fill.style.background = color;
+  meter.appendChild(fill);
+
+  el.append(l, v, cls, meter);
+  return el;
+}
+
 function renderTiles() {
-  const { global, markets } = state.data;
+  const { global, markets, fearGreed } = state.data;
   const btc = markets.find(c => c.id === "bitcoin") ?? markets[0];
   const eth = markets.find(c => c.id === "ethereum");
   const slice = arr => arr.slice(-state.rangeHours);
@@ -106,6 +152,7 @@ function renderTiles() {
       spark: slice(eth.sparkline_in_7d?.price ?? []),
       sparkAccent: seriesColor(1),
     }),
+    fearGreed && Number.isFinite(fearGreed.value) && fngTile(fearGreed),
   ].filter(Boolean);
 
   $("tiles").replaceChildren(...tiles);

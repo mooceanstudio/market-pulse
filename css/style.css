@@ -23,6 +23,12 @@
   --series-8: #eb6834;  /* orange */
   --spark-dim: #c3c2b7; /* de-emphasis hue for sparkline history */
   --wash: rgba(11, 11, 11, 0.045);
+
+  /* status palette — fixed in both modes, never reused as a series color */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -157,7 +163,7 @@ button:hover { background: var(--wash); }
 
 .tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
 }
 
@@ -177,6 +183,17 @@ button:hover { background: var(--wash); }
 .tile-delta.down { color: var(--delta-down); }
 .tile-delta .vs { color: var(--text-muted); font-weight: 400; }
 .tile svg { margin-top: 6px; display: block; width: 100%; }
+
+/* Meter (Fear & Greed): the fill carries the state; the unfilled track is
+   a light tint of the same color so state reads across the whole bar. */
+.meter {
+  margin-top: 12px;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.meter-fill { height: 100%; border-radius: 4px; }
+.tile-class { font-size: 13px; font-weight: 550; color: var(--text-secondary); }
 
 /* ---------- Cards & charts ---------- */
 

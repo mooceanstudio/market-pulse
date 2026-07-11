@@ -29,9 +29,23 @@ const markets = await getJson(
 );
 const global = (await getJson(`${API}/global`)).data;
 
+// Secondary source — mirror of fetchFearGreed() in js/api.js; optional,
+// so a hiccup here never blocks the market snapshot.
+const fearGreed = await getJson("https://api.alternative.me/fng/?limit=2", 1)
+  .then(res => ({
+    value: Number(res.data[0].value),
+    classification: res.data[0].value_classification,
+    yesterday: Number(res.data[1]?.value),
+  }))
+  .catch(err => {
+    console.warn("Fear & Greed fetch failed, omitting:", err.message);
+    return null;
+  });
+
 const snapshot = {
   fetched_at: new Date().toISOString(),
   source: "coingecko",
+  fear_greed: fearGreed,
   global: {
     total_market_cap: { usd: global.total_market_cap.usd },
     total_volume: { usd: global.total_volume.usd },
